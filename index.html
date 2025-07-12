@@ -64,14 +64,14 @@
   <script>
     // Bonos (hoja 1)
     < !--
-    const bonosCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRJBZwnLZa0t8RMRWp5GnmpWmV8PUyrO81CJoxRP1k4Y3OYxEF007tEalItapgpGFj1Pt_KN_PFTuFe/pub?gid=0&single=true&output=csv";
+    //const bonosCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRJBZwnLZa0t8RMRWp5GnmpWmV8PUyrO81CJoxRP1k4Y3OYxEF007tEalItapgpGFj1Pt_KN_PFTuFe/pub?gid=0&single=true&output=csv";
 -->
     // LECAP (hoja 2)
     const lecapCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRJBZwnLZa0t8RMRWp5GnmpWmV8PUyrO81CJoxRP1k4Y3OYxEF007tEalItapgpGFj1Pt_KN_PFTuFe/pub?gid=809820325&single=true&output=csv";
 < !--
-    fetch(bonosCsvUrl)
-      .then(response => response.text())
-      .then(csv => renderTable(csv, "tablaBonos", "pct_change"));
+    //fetch(bonosCsvUrl)
+    //  .then(response => response.text())
+    //  .then(csv => renderTable(csv, "tablaBonos", "pct_change"));
 -->
     fetch(lecapCsvUrl)
       .then(response => response.text())
