@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Bonos Argentina - Estilo Bloomberg</title>
+  <title>Precios de Bonos y LECAP</title>
   <style>
     body {
       background-color: #0d1117;
@@ -12,16 +12,17 @@
       margin: 0;
     }
 
-    h1 {
+    h1, h2 {
       color: #58a6ff;
-      font-size: 24px;
-      margin-bottom: 20px;
+      font-size: 22px;
+      margin-top: 40px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 14px;
+      margin-bottom: 40px;
     }
 
     th, td {
@@ -53,50 +54,64 @@
   </style>
 </head>
 <body>
-  <h1>Precios de Bonos Argentina</h1>
+
+  <h1>Bonos Argentina</h1>
   <table id="tablaBonos"></table>
 
+  <h2>LECAP y Letras del Tesoro</h2>
+  <table id="tablaLecap"></table>
+
   <script>
-    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRJBZwnLZa0t8RMRWp5GnmpWmV8PUyrO81CJoxRP1k4Y3OYxEF007tEalItapgpGFj1Pt_KN_PFTuFe/pub?output=csv";
+    // Bonos (hoja 1)
+    const bonosCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRJBZwnLZa0t8RMRWp5GnmpWmV8PUyrO81CJoxRP1k4Y3OYxEF007tEalItapgpGFj1Pt_KN_PFTuFe/pub?gid=0&single=true&output=csv";
 
-    fetch(csvUrl)
+    // LECAP (hoja 2)
+    const lecapCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRJBZwnLZa0t8RMRWp5GnmpWmV8PUyrO81CJoxRP1k4Y3OYxEF007tEalItapgpGFj1Pt_KN_PFTuFe/pub?gid=809820325&single=true&output=csv";
+
+    fetch(bonosCsvUrl)
       .then(response => response.text())
-      .then(csv => {
-        const lines = csv.trim().split("\n").map(line => line.split(","));
-        const table = document.getElementById("tablaBonos");
+      .then(csv => renderTable(csv, "tablaBonos", "pct_change"));
 
-        let currentPctIndex = -1;
+    fetch(lecapCsvUrl)
+      .then(response => response.text())
+      .then(csv => renderTable(csv, "tablaLecap", "var%"));
 
-        lines.forEach((row, rowIndex) => {
-          const tr = document.createElement("tr");
+    function renderTable(csv, tableId, columnToColor) {
+      const lines = csv.trim().split("\n").map(line => line.split(","));
+      const table = document.getElementById(tableId);
+      let currentColorIndex = -1;
 
-          const isHeader = row.some(cell => cell.toLowerCase().trim() === "pct_change");
-          if (isHeader) {
-            currentPctIndex = row.findIndex(cell => cell.toLowerCase().trim() === "pct_change");
-          }
+      lines.forEach((row, rowIndex) => {
+        const tr = document.createElement("tr");
 
-          row.forEach((cell, colIndex) => {
-            const element = document.createElement(isHeader ? "th" : "td");
-            const cleanCell = cell.trim();
+        const isHeader = row.some(cell => cell.toLowerCase().trim() === columnToColor.toLowerCase());
+        if (isHeader) {
+          currentColorIndex = row.findIndex(cell => cell.toLowerCase().trim() === columnToColor.toLowerCase());
+        }
 
-            if (!isHeader && currentPctIndex === colIndex) {
-              const value = parseFloat(cleanCell);
-              if (!isNaN(value)) {
-                element.className = value > 0 ? "green" : value < 0 ? "red" : "gray";
-                element.textContent = value.toFixed(2) + "%";
-              } else {
-                element.textContent = cleanCell;
-              }
+        row.forEach((cell, colIndex) => {
+          const element = document.createElement(isHeader ? "th" : "td");
+          const cleanCell = cell.trim();
+
+          if (!isHeader && colIndex === currentColorIndex) {
+            const num = parseFloat(cleanCell.replace("%", "").replace(",", "."));
+            if (!isNaN(num)) {
+              element.className = num > 0 ? "green" : num < 0 ? "red" : "gray";
+              element.textContent = num.toFixed(2) + "%";
             } else {
               element.textContent = cleanCell;
             }
+          } else {
+            element.textContent = cleanCell;
+          }
 
-            tr.appendChild(element);
-          });
-
-          table.appendChild(tr);
+          tr.appendChild(element);
         });
+
+        table.appendChild(tr);
       });
+    }
   </script>
+
 </body>
 </html>
