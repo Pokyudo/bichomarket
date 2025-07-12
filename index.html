@@ -8,8 +8,8 @@
       background-color: #0d1117;
       color: #c9d1d9;
       font-family: monospace;
-      margin: 0;
       padding: 20px;
+      margin: 0;
     }
 
     h1 {
@@ -25,9 +25,9 @@
     }
 
     th, td {
-      padding: 8px 10px;
-      text-align: center;
       border: 1px solid #30363d;
+      padding: 6px 8px;
+      text-align: center;
     }
 
     th {
@@ -65,21 +65,32 @@
         const lines = csv.trim().split("\n").map(line => line.split(","));
         const table = document.getElementById("tablaBonos");
 
+        let currentPctIndex = -1;
+
         lines.forEach((row, rowIndex) => {
           const tr = document.createElement("tr");
 
-          row.forEach((cell, colIndex) => {
-            const element = document.createElement(rowIndex === 0 ? "th" : "td");
+          const isHeader = row.some(cell => cell.toLowerCase().trim() === "pct_change");
+          if (isHeader) {
+            currentPctIndex = row.findIndex(cell => cell.toLowerCase().trim() === "pct_change");
+          }
 
-            // Estilado especial para columna de variación porcentual
-            if (rowIndex !== 0 && lines[0][colIndex].toLowerCase() === "pct_change") {
-              const value = parseFloat(cell.replace("%", ""));
+          row.forEach((cell, colIndex) => {
+            const element = document.createElement(isHeader ? "th" : "td");
+            const cleanCell = cell.trim();
+
+            if (!isHeader && currentPctIndex === colIndex) {
+              const value = parseFloat(cleanCell);
               if (!isNaN(value)) {
                 element.className = value > 0 ? "green" : value < 0 ? "red" : "gray";
+                element.textContent = value.toFixed(2) + "%";
+              } else {
+                element.textContent = cleanCell;
               }
+            } else {
+              element.textContent = cleanCell;
             }
 
-            element.textContent = cell;
             tr.appendChild(element);
           });
 
