@@ -1,107 +1,67 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>Precios de Bonos y LECAP</title>
+  <title>Bonos en Tiempo Real</title>
   <style>
-    body {
-      background-color: #0d1117;
-      color: #c9d1d9;
-      font-family: monospace;
-      padding: 20px;
-      margin: 0;
-    }
-
-    h1, h2 {
-      color: #58a6ff;
-      font-size: 22px;
-      margin-top: 40px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-      margin-bottom: 40px;
-    }
-
-    th, td {
-      border: 1px solid #30363d;
-      padding: 6px 8px;
-      text-align: center;
-    }
-
-    th {
-      background-color: #161b22;
-      color: #d2d2d2;
-    }
-
-    td.green {
-      color: #28f028;
-    }
-
-    td.red {
-      color: #f04747;
-    }
-
-    td.gray {
-      color: #8b949e;
-    }
-
-    tr:hover {
-      background-color: #21262d;
-    }
+    body { background: #0d1117; color: #c9d1d9; font-family: monospace; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #30363d; padding: 6px; text-align: center; }
+    th { background: #161b22; }
+    td.green { color: #28f028; }
+    td.red { color: #f04747; }
   </style>
 </head>
 <body>
-
-  <h2>LECAP y Letras del Tesoro</h2>
-  <table id="tablaLecap"></table>
+  <h1>Bonos Argentina en Tiempo Real</h1>
+  <table id="tablaBonos"></table>
 
   <script>
-    // LECAP (hoja 2)
-    const lecapCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRJBZwnLZa0t8RMRWp5GnmpWmV8PUyrO81CJoxRP1k4Y3OYxEF007tEalItapgpGFj1Pt_KN_PFTuFe/pub?gid=809820325&single=true&output=csv";
+    const bonosEstaticos = {
+      "AE38": { vencimiento: "2038-12-31", pagoFinal: 100 },
+      "AL30": { vencimiento: "2030-10-15", pagoFinal: 100 }
+    };
 
-    fetch(lecapCsvUrl)
-      .then(response => response.text())
-      .then(csv => renderTable(csv, "tablaLecap", "var%"));
-
-    function renderTable(csv, tableId, columnToColor) {
-      const lines = csv.trim().split("\n").map(line => line.split(","));
-      const table = document.getElementById(tableId);
-      let currentColorIndex = -1;
-
-      lines.forEach((row, rowIndex) => {
-        const tr = document.createElement("tr");
-
-        const isHeader = row.some(cell => cell.toLowerCase().trim() === columnToColor.toLowerCase());
-        if (isHeader) {
-          currentColorIndex = row.findIndex(cell => cell.toLowerCase().trim() === columnToColor.toLowerCase());
-        }
-
-        row.forEach((cell, colIndex) => {
-          const element = document.createElement(isHeader ? "th" : "td");
-          const cleanCell = cell.trim();
-
-          if (!isHeader && colIndex === currentColorIndex) {
-            const num = parseFloat(cleanCell.replace("%", "").replace(",", "."));
-            if (!isNaN(num)) {
-              element.className = num > 0 ? "green" : num < 0 ? "red" : "gray";
-              element.textContent = num.toFixed(2) + "%";
-            } else {
-              element.textContent = cleanCell;
-            }
-          } else {
-            element.textContent = cleanCell;
-          }
-
-          tr.appendChild(element);
-        });
-
-        table.appendChild(tr);
-      });
+    function calcularTNA(precio, final, dias) {
+      const r = Math.pow(final / precio, 365 / dias) - 1;
+      return r * 100;
     }
-  </script>
 
+    async function actualizarTabla() {
+      const response = await fetch("https://data912.com/live/arg_bonds");
+      const data = await response.json();
+
+      const tabla = document.getElementById("tablaBonos");
+      tabla.innerHTML = "";
+
+      const encabezado = `<tr><th>Bono</th><th>Precio</th><th>Vencimiento</th><th>Días</th><th>TNA</th></tr>`;
+      tabla.innerHTML += encabezado;
+
+      const hoy = new Date();
+
+      for (const bono of data) {
+        const symbol = bono.symbol;
+        const estatico = bonosEstaticos[symbol];
+        if (!estatico) continue;
+
+        const precio = bono.c;
+        const venc = new Date(estatico.vencimiento);
+        const dias = Math.max(1, Math.floor((venc - hoy) / (1000 * 60 * 60 * 24)));
+        const tna = calcularTNA(precio, estatico.pagoFinal, dias);
+
+        tabla.innerHTML += `
+          <tr>
+            <td>${symbol}</td>
+            <td>${precio.toFixed(2)}</td>
+            <td>${estatico.vencimiento}</td>
+            <td>${dias}</td>
+            <td class="${tna > 0 ? 'green' : 'red'}">${tna.toFixed(2)}%</td>
+          </tr>`;
+      }
+    }
+
+    setInterval(actualizarTabla, 10000); // cada 10 segundos
+    actualizarTabla();
+  </script>
 </body>
 </html>
